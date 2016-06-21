@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using OpenTK.Input;
 
 namespace Chip8
 {
@@ -71,7 +72,7 @@ namespace Chip8
         /// <summary>
         /// The current state of the keypad.
         /// </summary>
-        public byte[] key = new byte[16];
+        public bool[] key = new bool[16];
 
         /// <summary>
         /// The fontset of the CHIP8.
@@ -161,7 +162,7 @@ namespace Chip8
         {
             // Fetch the current opcode
             opcode = (ushort)((ushort)(memory[pc] << 8) | memory[pc + 1]);
-            Console.WriteLine("Executing opcode: {0:X}", opcode);
+            //Console.WriteLine("Executing opcode: {0:X}", opcode);
 
             ushort X = (byte)(memory[pc] & 0x0F);
             ushort Y = (byte)(memory[pc + 1] >> 4);
@@ -310,7 +311,7 @@ namespace Chip8
                     break;
 
                 case 0xA000: // ANNN: Sets I to the address NNN
-                    I = NNN;
+                    I = (ushort)(opcode & 0x0FFF);
                     break;
 
                 case 0xB000:
@@ -334,7 +335,7 @@ namespace Chip8
                             if((spritePart & (0x80 >> width)) != 0)
                             {
                                 ushort _x = (ushort)((V[X] + width) % 64);
-                                ushort _y = (ushort)((V[X] + width) % 32);
+                                ushort _y = (ushort)((V[Y] + height) % 32);
 
                                 if(gfx[_x, _y] == true)
                                 {
@@ -351,14 +352,14 @@ namespace Chip8
 
                     if(N == 0xE)
                     {
-                        if(key[V[X]] == 1)
+                        if(key[V[X]])
                         {
                             pc += 2;
                         }
                     }
                     else
                     {
-                        if(key[V[X]] == 0)
+                        if(!key[V[X]])
                         {
                             pc += 2;
                         }
@@ -459,9 +460,26 @@ namespace Chip8
 
         }
 
-        private void SetKeys()
+        public void SetKeys(KeyboardState state)
         {
+            key[0x1] = state[Key.Number1];
+            key[0x2] = state[Key.Number2];
+            key[0x3] = state[Key.Number3];
+            key[0xC] = state[Key.Number4];
+            key[0x4] = state[Key.Q];
+            key[0x5] = state[Key.W];
+            key[0x6] = state[Key.E];
+            key[0xD] = state[Key.R];
+            key[0x7] = state[Key.A];
+            key[0x8] = state[Key.S];
+            key[0x9] = state[Key.D];
+            key[0xE] = state[Key.F];
+            key[0xA] = state[Key.Z];
+            key[0x0] = state[Key.X];
+            key[0xB] = state[Key.C];
+            key[0xF] = state[Key.V];
 
+            isInputExecuted = true;
         }
     }
 }
