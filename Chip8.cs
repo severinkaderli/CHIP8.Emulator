@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OpenTK.Input;
+using OpenTK.Graphics.OpenGL;
+using OpenTK.Graphics;
 
 namespace Chip8
 {
@@ -455,29 +457,55 @@ namespace Chip8
             }
         }
 
-        private void DrawGraphics()
+        /// <summary>
+        /// Draw the graphics if needed
+        /// </summary>
+        public void DrawGraphics()
         {
+            for (int i = 0; i < 64; i++)
+            {
+                for (int j = 0; j < 32; j++)
+                {
+                    if (gfx[i, j])
+                    {
+                        GL.Begin(BeginMode.Quads);
 
+                        // Setting Color
+                        GL.Color3(System.Drawing.Color.MidnightBlue);
+
+                        GL.Vertex2(i * 10, j * 10);
+                        GL.Vertex2(i * 10, j * 10 + 10);
+                        GL.Vertex2((i + 1) * 10, j * 10 + 10);
+                        GL.Vertex2((i + 1) * 10, j * 10);
+
+                        GL.End();
+                    }
+                }
+            }
         }
 
-        public void SetKeys(KeyboardState state)
+        /// <summary>
+        /// Set the current state of the keys.
+        /// </summary>
+        /// <param name="keyboard"></param>
+        public void SetKeys(KeyboardDevice keyboard)
         {
-            key[0x1] = state[Key.Number1];
-            key[0x2] = state[Key.Number2];
-            key[0x3] = state[Key.Number3];
-            key[0xC] = state[Key.Number4];
-            key[0x4] = state[Key.Q];
-            key[0x5] = state[Key.W];
-            key[0x6] = state[Key.E];
-            key[0xD] = state[Key.R];
-            key[0x7] = state[Key.A];
-            key[0x8] = state[Key.S];
-            key[0x9] = state[Key.D];
-            key[0xE] = state[Key.F];
-            key[0xA] = state[Key.Z];
-            key[0x0] = state[Key.X];
-            key[0xB] = state[Key.C];
-            key[0xF] = state[Key.V];
+            key[0x1] = keyboard[Key.Number1];
+            key[0x2] = keyboard[Key.Number2];
+            key[0x3] = keyboard[Key.Number3];
+            key[0xC] = keyboard[Key.Number4];
+            key[0x4] = keyboard[Key.Q];
+            key[0x5] = keyboard[Key.W];
+            key[0x6] = keyboard[Key.E];
+            key[0xD] = keyboard[Key.R];
+            key[0x7] = keyboard[Key.A];
+            key[0x8] = keyboard[Key.S];
+            key[0x9] = keyboard[Key.D];
+            key[0xE] = keyboard[Key.F];
+            key[0xA] = keyboard[Key.Z];
+            key[0x0] = keyboard[Key.X];
+            key[0xB] = keyboard[Key.C];
+            key[0xF] = keyboard[Key.V];
 
             isInputExecuted = true;
         }
