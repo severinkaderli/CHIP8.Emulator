@@ -1,12 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Drawing;
 using OpenTK.Input;
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Graphics;
 
 namespace Chip8
 {
@@ -460,7 +457,7 @@ namespace Chip8
         /// <summary>
         /// Draw the graphics if needed
         /// </summary>
-        public void DrawGraphics()
+        public void DrawGraphics(Color drawColor)
         {
             for (int i = 0; i < 64; i++)
             {
@@ -471,7 +468,7 @@ namespace Chip8
                         GL.Begin(BeginMode.Quads);
 
                         // Setting Color
-                        GL.Color3(System.Drawing.Color.MidnightBlue);
+                        GL.Color3(drawColor);
 
                         GL.Vertex2(i * 10, j * 10);
                         GL.Vertex2(i * 10, j * 10 + 10);
