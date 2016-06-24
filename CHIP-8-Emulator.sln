@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chip8", "Chip8.csproj", "{246A7F22-A836-44F9-AF05-84C53F3B2F9B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CHIP8.Emulator", "CHIP8.Emulator.csproj", "{246A7F22-A836-44F9-AF05-84C53F3B2F9B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

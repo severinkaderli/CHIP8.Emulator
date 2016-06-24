@@ -8,7 +8,7 @@ using System.IO;
 using Mono.Options;
 using System.Collections.Generic;
 
-namespace Chip8
+namespace CHIP8.Emulator
 {
     class Emulator
     {
@@ -41,7 +41,7 @@ namespace Chip8
             {
                 Console.Write("Emulator: ");
                 Console.WriteLine(e.Message);
-                Console.WriteLine("Try emulator --help");
+                Console.WriteLine("Try chip8-emulator.exe --help");
                 return;
             }
 
@@ -65,40 +65,20 @@ namespace Chip8
                 // No file given
                 Console.WriteLine("No file given!");
                 return;
-            }
+            }           
 
-            if (!File.Exists(romFileName))
-            {
-                Console.WriteLine("File: {0} can't be found!", romFileName);
-                return;
-            }
-
-            
-
-            using (var gameWindow = new GameWindow(620, 320))
+            using (GameWindow gameWindow = new GameWindow(620, 320))
             {
                 
                 int frame = 0;
-                Color[][] palettes = new Color[3][];
-                Color[] palette = new Color[1];
                 var chip = new Chip8();
                 chip.Initialize(romFileName);
                 
 
                 gameWindow.Load += (sender, e) =>
                 {
-
-                    palettes[0] = new Color[] { Color.Black, Color.White };
-                    palettes[1] = new Color[] { Color.Red, Color.Blue };
-                    palettes[2] = new Color[] { Color.Yellow, Color.Green };
-
-                    // Get a random palette
-                    Random rnd = new Random();
-                    palette = palettes[rnd.Next(palettes.Length)];
-
-                    gameWindow.VSync = VSyncMode.On;
+                    gameWindow.VSync = VSyncMode.Off;
                     gameWindow.WindowBorder = WindowBorder.Fixed;
-
                 };
 
                 gameWindow.Resize += (sender, e) =>
@@ -110,7 +90,7 @@ namespace Chip8
                 {
                     chip.SetKeys(gameWindow.Keyboard);
 
-                    gameWindow.Title = (frame % 60).ToString();
+                    gameWindow.Title = String.Format("FPS: {0}", gameWindow.RenderFrequency);
                     frame++;
 
                     chip.EmulateCycle();
@@ -118,31 +98,35 @@ namespace Chip8
 
                 gameWindow.RenderFrame += (sender, e) =>
                 {
+                    // Only update screen if it's neccesary
+                    if(chip.renderFlag)
+                    {
+                        Console.WriteLine("{0:HH:mm:ss}: Updates screen", DateTime.Now);
+                        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-                    //GL.ClearColor(color.Mi)
-                    GL.ClearColor(palette[0]);
-                    GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                        GL.MatrixMode(MatrixMode.Projection);
+                        GL.LoadIdentity();
+                        GL.Ortho(0, 640, 320, 0, -1, 1);
 
-                    GL.MatrixMode(MatrixMode.Projection);
-                    GL.LoadIdentity();
-                    GL.Ortho(0, 640, 320, 0, -1, 1);
+                        chip.DrawGraphics();
 
-                    chip.DrawGraphics(palette[1]);
+
+                        gameWindow.SwapBuffers();
+                        chip.renderFlag = false;
+                    }
                     
-
-                    gameWindow.SwapBuffers();
                 };
 
-                gameWindow.Run(120.0);
+                gameWindow.Run(60);
             }
         }
 
+        // Print out the help information
         static void showHelp(OptionSet options)
         {
             // show some app description message
-            Console.WriteLine("Usage: OptionsSample.exe [OPTIONS]+ message");
-            Console.WriteLine("Greet a list of individuals with an optional message.");
-            Console.WriteLine("If no message is specified, a generic greeting is used.");
+            Console.WriteLine("Usage: chip8-emulator.exe [OPTIONS] FILE");
+            Console.WriteLine("File is the rom that you want to play.");
             Console.WriteLine();
 
             // output the options

@@ -5,7 +5,7 @@ using System.Drawing;
 using OpenTK.Input;
 using OpenTK.Graphics.OpenGL;
 
-namespace Chip8
+namespace CHIP8.Emulator
 {
     class Chip8
     {
@@ -17,6 +17,11 @@ namespace Chip8
         public bool isInputExecuted = false;
 
         public byte lastInput;
+
+        /// <summary>
+        /// If true the screen should be redrawn.
+        /// </summary>
+        public bool renderFlag = false;
 
         /// <summary>
         /// The memory of the CHIP-8.
@@ -97,42 +102,17 @@ namespace Chip8
         };
 
         /// <summary>
-        /// Runs the emulator.
+        /// Initializes and resets the system.
         /// </summary>
-        /// <param name="path">Path to the game</param>
-        ////public void Run(String path)
-        ////{
-        ////    // Initialize the system
-        ////    //Initialize();
-
-        ////    // Load the game
-        ////    LoadGame(path);
-     
-        ////    // Main execution loop
-        ////    for (;;)
-        ////    {
-        ////        EmulateCycle();
-
-        ////        if(drawFlag)
-        ////        {
-        ////            DrawGraphics();
-        ////        }
-
-        ////        SetKeys();
-        ////    }
-        ////}
-
-        /// <summary>
-        /// Initializes the system.
-        /// </summary>
-        public void Initialize(String name)
+        /// <param name="fileName"></param>
+        public void Initialize(String fileName)
         {
             I = 0;
             stackPointer = 0;
 
             pc = START_PROGRAM_MEMORY;
 
-            LoadGame(name);
+            LoadGame(fileName);
 
             // Load fontset into memory
             for(int i = 0; i < fontset.Length; ++i)
@@ -144,17 +124,26 @@ namespace Chip8
         /// <summary>
         /// Loads a game into memory
         /// </summary>
-        /// <param name="game"></param>
-        private void LoadGame(String game)
+        /// <param name="fileName"></param>
+        private void LoadGame(String fileName)
         {
-            // Open the file in binary mode
-            BinaryReader binaryReader = new BinaryReader(File.Open(game, FileMode.Open));
 
-            // Loading the game into memory
-            for(int i = 0; i < binaryReader.BaseStream.Length; i++)
+            // If the file doesn't exist, exit the application.
+            if(!File.Exists(fileName))
             {
-                memory[START_PROGRAM_MEMORY + i] = binaryReader.ReadByte();
+                Console.WriteLine("File {0} doesn't exist!", fileName);
+                Environment.Exit(1);
             }
+
+            // Open the file in binary mode
+            using (BinaryReader binaryReader = new BinaryReader(File.Open(fileName, FileMode.Open)))
+            {
+                // Loading the game into memory
+                for (int i = 0; i < binaryReader.BaseStream.Length; i++)
+                {
+                    memory[START_PROGRAM_MEMORY + i] = binaryReader.ReadByte();
+                }
+            }; 
         }
 
         public void EmulateCycle()
@@ -178,6 +167,7 @@ namespace Chip8
                         if (N == 0x0)
                         {
                             //Clear the display.
+                            renderFlag = true;
                             gfx = new bool[64, 32];
                         }
                         if (N == 0xE)
@@ -200,7 +190,6 @@ namespace Chip8
                 case 0x2000: // 2NNN: Jump to the subroutine in address NNN
                     stack.Push(pc);
                     pc = (ushort)((opcode & 0x0FFF) - 2);
-                    Console.WriteLine("NNN: {0:X}", NNN);
                     break;
 
                 case 0x3000: // 3XNN: Skip the next instruction if value of register X equals NN
@@ -324,7 +313,7 @@ namespace Chip8
 
                 case 0xD000: // Print sprite to screen
                     V[0xF] = 0;
-
+                    renderFlag = true;
                     for(int height = 0; height < N; height++)
                     {
                         byte spritePart = memory[I + height];
@@ -457,7 +446,7 @@ namespace Chip8
         /// <summary>
         /// Draw the graphics if needed
         /// </summary>
-        public void DrawGraphics(Color drawColor)
+        public void DrawGraphics()
         {
             for (int i = 0; i < 64; i++)
             {
@@ -466,15 +455,10 @@ namespace Chip8
                     if (gfx[i, j])
                     {
                         GL.Begin(BeginMode.Quads);
-
-                        // Setting Color
-                        GL.Color3(drawColor);
-
                         GL.Vertex2(i * 10, j * 10);
                         GL.Vertex2(i * 10, j * 10 + 10);
                         GL.Vertex2((i + 1) * 10, j * 10 + 10);
                         GL.Vertex2((i + 1) * 10, j * 10);
-
                         GL.End();
                     }
                 }
@@ -505,6 +489,7 @@ namespace Chip8
             key[0xF] = keyboard[Key.V];
 
             isInputExecuted = true;
+            //lastInput =
         }
     }
 }
