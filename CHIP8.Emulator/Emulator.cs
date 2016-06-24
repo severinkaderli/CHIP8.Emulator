@@ -99,7 +99,7 @@ namespace CHIP8.Emulator
                 gameWindow.RenderFrame += (sender, e) =>
                 {
                     // Only update screen if it's neccesary
-                    if(chip.renderFlag)
+                    if(chip.RenderFlag)
                     {
                         Console.WriteLine("{0:HH:mm:ss}: Updates screen", DateTime.Now);
                         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -112,7 +112,7 @@ namespace CHIP8.Emulator
 
 
                         gameWindow.SwapBuffers();
-                        chip.renderFlag = false;
+                        chip.RenderFlag = false;
                     }
                     
                 };

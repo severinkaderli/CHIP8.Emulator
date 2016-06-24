@@ -14,64 +14,70 @@ namespace CHIP8.Emulator
         /// </summary>
         private const int START_PROGRAM_MEMORY = 512;
 
-        public bool isInputExecuted = false;
+        /// <summary>
+        /// True if an input was executed.
+        /// </summary>
+        public bool IsInputExecuted { get; set; } = false;
 
-        public byte lastInput;
+        /// <summary>
+        /// Holds the last input.
+        /// </summary>
+        public byte LastInput { get; set; }
 
         /// <summary>
         /// If true the screen should be redrawn.
         /// </summary>
-        public bool renderFlag = false;
+        public bool RenderFlag { get; set; } = false;
 
         /// <summary>
         /// The memory of the CHIP-8.
         /// </summary>
-        protected byte[] memory = new byte[4096];
+        private byte[] Memory { get; set; } = new byte[4096];
 
         /// <summary>
         /// The current opcode.
         /// </summary>
-        protected ushort opcode;
+        private ushort Opcode { get; set; }
 
         /// <summary>
         /// CPU registers from V0 to VE. VF is the carry flag.
         /// </summary>
-        protected byte[] V = new byte[16];
+        private byte[] V { get; set; } = new byte[16];
 
         /// <summary>
         /// The index register
         /// </summary>
-        protected ushort I = 0;
+        private ushort I { get; set; } = 0;
 
         /// <summary>
         /// Program counter
         /// </summary>
-        protected ushort pc;
+        private ushort pc;
 
         /// <summary>
         /// Array that contains the current screen state.
         /// </summary>
-        public bool[,] gfx = new bool[64, 32];
+        private bool[,] GFX { get; set; } = new bool[64, 32];
 
         /// <summary>
         /// If greater than zero, this timer counts down.
         /// </summary>
-        protected byte delayTimer;
+        private byte DelayTimer { get; set; } = 0x00;
 
         /// <summary>
         /// If the sound timer reaches zero, a sound is emitted.
         /// </summary>
-        protected byte soundTimer;
+        private byte SoundTimer { get; set; } = 0x00;
 
         /// <summary>
         /// The stack
         /// </summary>
-        protected Stack<ushort> stack = new Stack<ushort>(16);
+        private Stack<ushort> Stack { get; set; } = new Stack<ushort>(16);
 
         /// <summary>
         /// Pointer that point to the current stack position.
         /// </summary>
-        protected int stackPointer;
+        private int StackPointer { get; set; }
 
         /// <summary>
         /// The current state of the keypad.
@@ -108,7 +114,7 @@ namespace CHIP8.Emulator
         public void Initialize(String fileName)
         {
             I = 0;
-            stackPointer = 0;
+            StackPointer = 0;
 
             pc = START_PROGRAM_MEMORY;
 
@@ -117,7 +123,7 @@ namespace CHIP8.Emulator
             // Load fontset into memory
             for(int i = 0; i < fontset.Length; ++i)
             {
-                memory[i] = fontset[i];
+                Memory[i] = fontset[i];
             }
         }
 
@@ -141,7 +147,7 @@ namespace CHIP8.Emulator
                 // Loading the game into memory
                 for (int i = 0; i < binaryReader.BaseStream.Length; i++)
                 {
-                    memory[START_PROGRAM_MEMORY + i] = binaryReader.ReadByte();
+                    Memory[START_PROGRAM_MEMORY + i] = binaryReader.ReadByte();
                 }
             }; 
         }
@@ -149,17 +155,17 @@ namespace CHIP8.Emulator
         public void EmulateCycle()
         {
             // Fetch the current opcode
-            opcode = (ushort)((ushort)(memory[pc] << 8) | memory[pc + 1]);
+            Opcode = (ushort)((ushort)(Memory[pc] << 8) | Memory[pc + 1]);
             //Console.WriteLine("Executing opcode: {0:X}", opcode);
 
-            ushort X = (byte)(memory[pc] & 0x0F);
-            ushort Y = (byte)(memory[pc + 1] >> 4);
-            ushort N = (byte)(memory[pc + 1] & 0x0F);
-            ushort NN = (byte)(memory[pc + 1]);
-            ushort NNN = (byte)(opcode & 0x0FFF);
+            ushort X = (byte)(Memory[pc] & 0x0F);
+            ushort Y = (byte)(Memory[pc + 1] >> 4);
+            ushort N = (byte)(Memory[pc + 1] & 0x0F);
+            ushort NN = (byte)(Memory[pc + 1]);
+            ushort NNN = (byte)(Opcode & 0x0FFF);
 
             // Execute the opcode
-            switch (opcode & 0xF000)
+            switch (Opcode & 0xF000)
             {
                 case 0x0000:
                     if (X == 0x0)
@@ -167,13 +173,13 @@ namespace CHIP8.Emulator
                         if (N == 0x0)
                         {
                             //Clear the display.
-                            renderFlag = true;
-                            gfx = new bool[64, 32];
+                            RenderFlag = true;
+                            GFX = new bool[64, 32];
                         }
                         if (N == 0xE)
                         {
                             //Return from subroutine.
-                            pc = stack.Pop();
+                            pc = Stack.Pop();
                         }
                     }
                     else
@@ -184,12 +190,12 @@ namespace CHIP8.Emulator
                     break;
 
                 case 0x1000: // 1NNN: Jump to the address NNN
-                    pc = (ushort)((opcode & 0x0FFF) - 2);
+                    pc = (ushort)((Opcode & 0x0FFF) - 2);
                     break;
 
                 case 0x2000: // 2NNN: Jump to the subroutine in address NNN
-                    stack.Push(pc);
-                    pc = (ushort)((opcode & 0x0FFF) - 2);
+                    Stack.Push(pc);
+                    pc = (ushort)((Opcode & 0x0FFF) - 2);
                     break;
 
                 case 0x3000: // 3XNN: Skip the next instruction if value of register X equals NN
@@ -200,7 +206,7 @@ namespace CHIP8.Emulator
                     break;
 
                 case 0x4000: // 4XNN: Skip the next instruction if value of register X not equals NNN
-                    if(V[X] != memory[pc + 1])
+                    if(V[X] != Memory[pc + 1])
                     {
                         pc += 2;
                     }
@@ -299,11 +305,11 @@ namespace CHIP8.Emulator
                     break;
 
                 case 0xA000: // ANNN: Sets I to the address NNN
-                    I = (ushort)(opcode & 0x0FFF);
+                    I = (ushort)(Opcode & 0x0FFF);
                     break;
 
                 case 0xB000:
-                    pc = (ushort)((opcode & 0x0FFF) + V[0] - 2);
+                    pc = (ushort)((Opcode & 0x0FFF) + V[0] - 2);
                     break;
 
                 case 0xC000:
@@ -313,10 +319,10 @@ namespace CHIP8.Emulator
 
                 case 0xD000: // Print sprite to screen
                     V[0xF] = 0;
-                    renderFlag = true;
+                    RenderFlag = true;
                     for(int height = 0; height < N; height++)
                     {
-                        byte spritePart = memory[I + height];
+                        byte spritePart = Memory[I + height];
 
                         for(int width = 0; width < 8; width++)
                         {
@@ -325,12 +331,12 @@ namespace CHIP8.Emulator
                                 ushort _x = (ushort)((V[X] + width) % 64);
                                 ushort _y = (ushort)((V[Y] + height) % 32);
 
-                                if(gfx[_x, _y] == true)
+                                if(GFX[_x, _y] == true)
                                 {
                                     V[0xF] = 1;
                                 }
 
-                                gfx[_x, _y] ^= true;
+                                GFX[_x, _y] ^= true;
                             }
                         }
                     }
@@ -359,13 +365,13 @@ namespace CHIP8.Emulator
                     switch(N)
                     {
                         case 0x7: // Set Vx to delay timer
-                            V[X] = delayTimer;
+                            V[X] = DelayTimer;
                             break;
 
                         case 0xA: // Do not increase program counter until a key is pressed. Then store pressed key.
-                            if (isInputExecuted)
+                            if (IsInputExecuted)
                             {
-                                V[X] = lastInput;
+                                V[X] = LastInput;
                             }
                             else
                             {
@@ -378,28 +384,28 @@ namespace CHIP8.Emulator
                             switch (Y)
                             {
                                 case 0x1: // Delay Timer = regiserX
-                                    delayTimer = (byte) V[X];
+                                    DelayTimer = (byte) V[X];
                                     break;
 
                                 case 0x5: // Store registers V0 through Vx in memory starting at location I.
 
                                     for (int i = 0; i <= X; i++)
                                     {
-                                        memory[I + i] = V[i];
+                                        Memory[I + i] = V[i];
                                     }
                                     break;
 
                                 case 0x6: // Read registers V0 through Vx from memory starting at location I.
                                     for (int i = 0; i <= X; i++)
                                     {
-                                        V[i] = memory[I + i];
+                                        V[i] = Memory[I + i];
                                     }
                                     break;
                             }
                             break;
 
                         case 0x8: //Sound Timer = registerX
-                            soundTimer = V[X];
+                            SoundTimer = V[X];
                             break;
 
                         case 0xE: //I = I + regiserX
@@ -412,31 +418,31 @@ namespace CHIP8.Emulator
 
                         case 0x3: // Store BCD representation of Vx in memory locations I, I+1, and I+2.
                             decimal number = V[X];
-                            memory[I] = (byte)(number / 100);
-                            memory[I + 1] = (byte)((number % 100) / 10);
-                            memory[I + 2] = (byte)((number % 100) % 10);
+                            Memory[I] = (byte)(number / 100);
+                            Memory[I + 1] = (byte)((number % 100) / 10);
+                            Memory[I + 2] = (byte)((number % 100) % 10);
                             break;
                     }
 
                     break;
 
                 default:
-                    Console.WriteLine("Unknown opcode: {0:X}", opcode);
+                    Console.WriteLine("Unknown opcode: {0:X}", Opcode);
                     break;
             }
 
-            isInputExecuted = false;
+            IsInputExecuted = false;
             pc += 2;
 
-            if (delayTimer > 0)
+            if (DelayTimer > 0)
             {
-                delayTimer--;
+                DelayTimer--;
             }
 
-            if(soundTimer > 0)
+            if(SoundTimer > 0)
             {
-                soundTimer--;
-                if(soundTimer == 0)
+                SoundTimer--;
+                if(SoundTimer == 0)
                 {
                     Console.Beep();
                 }
@@ -452,7 +458,7 @@ namespace CHIP8.Emulator
             {
                 for (int j = 0; j < 32; j++)
                 {
-                    if (gfx[i, j])
+                    if (GFX[i, j])
                     {
                         GL.Begin(BeginMode.Quads);
                         GL.Vertex2(i * 10, j * 10);
@@ -488,8 +494,8 @@ namespace CHIP8.Emulator
             key[0xB] = keyboard[Key.C];
             key[0xF] = keyboard[Key.V];
 
-            isInputExecuted = true;
-            //lastInput =
+            IsInputExecuted = true;
+            //LastInput =
         }
     }
 }
