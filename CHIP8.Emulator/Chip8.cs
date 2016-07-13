@@ -37,7 +37,7 @@ namespace CHIP8.Emulator
         /// <summary>
         /// The current opcode.
         /// </summary>
-        private ushort Opcode { get; set; }
+        private ushort Instruction { get; set; }
 
         /// <summary>
         /// CPU registers from V0 to VE. VF is the carry flag.
@@ -52,7 +52,7 @@ namespace CHIP8.Emulator
         /// <summary>
         /// Program counter
         /// </summary>
-        private ushort pc;
+        private ushort PC { get; set; } = 0;
 
         /// <summary>
         /// Array that contains the current screen state.
@@ -116,7 +116,7 @@ namespace CHIP8.Emulator
             I = 0;
             StackPointer = 0;
 
-            pc = START_PROGRAM_MEMORY;
+            PC = START_PROGRAM_MEMORY;
 
             LoadGame(fileName);
 
@@ -154,18 +154,18 @@ namespace CHIP8.Emulator
 
         public void EmulateCycle()
         {
-            // Fetch the current opcode
-            Opcode = (ushort)((ushort)(Memory[pc] << 8) | Memory[pc + 1]);
-            //Console.WriteLine("Executing opcode: {0:X}", opcode);
+            // Fetch the current instruction
+            Instruction = (ushort)(Memory[PC] << 8 | Memory[PC + 1]);
 
-            ushort X = (byte)(Memory[pc] & 0x0F);
-            ushort Y = (byte)(Memory[pc + 1] >> 4);
-            ushort N = (byte)(Memory[pc + 1] & 0x0F);
-            ushort NN = (byte)(Memory[pc + 1]);
-            ushort NNN = (byte)(Opcode & 0x0FFF);
+            byte X = (byte)((Instruction & 0x0F00) >> 8);
+            byte Y = (byte)((Instruction & 0x00F0) >> 4);
+
+            byte N = (byte)(Instruction & 0x000F);
+            byte NN = (byte)(Instruction & 0x00FF);
+            ushort NNN = (byte)(Instruction & 0x0FFF);
 
             // Execute the opcode
-            switch (Opcode & 0xF000)
+            switch (Instruction & 0xF000)
             {
                 case 0x0000:
                     if (X == 0x0)
@@ -179,7 +179,7 @@ namespace CHIP8.Emulator
                         if (N == 0xE)
                         {
                             //Return from subroutine.
-                            pc = Stack.Pop();
+                            PC = Stack.Pop();
                         }
                     }
                     else
@@ -190,32 +190,31 @@ namespace CHIP8.Emulator
                     break;
 
                 case 0x1000: // 1NNN: Jump to the address NNN
-                    pc = (ushort)((Opcode & 0x0FFF) - 2);
+                    PC = (ushort)((Instruction & 0x0FFF) - 2);
+
+                    ushort other = (ushort)((Instruction & 0x0FFF) - 2);
+                    ushort stuff = (ushort)(NNN - 2);
+
+                    Console.WriteLine("NNN: {0}, Other: {0}", stuff, other);
                     break;
 
                 case 0x2000: // 2NNN: Jump to the subroutine in address NNN
-                    Stack.Push(pc);
-                    pc = (ushort)((Opcode & 0x0FFF) - 2);
+                    Stack.Push(PC);
+                    PC = (ushort)((Instruction & 0x0FFF) - 2);
                     break;
 
                 case 0x3000: // 3XNN: Skip the next instruction if value of register X equals NN
-                    if(V[X] == NN)
-                    {
-                        pc += 2;
-                    }
+                    if(V[X] == NN) PC += 2;
                     break;
 
                 case 0x4000: // 4XNN: Skip the next instruction if value of register X not equals NNN
-                    if(V[X] != Memory[pc + 1])
-                    {
-                        pc += 2;
-                    }
+                    if(V[X] != Memory[PC + 1]) PC += 2;
                     break;
 
                 case 0x5000: // 5XYN: Skip the next instruction if value of register X and Y are equal
                     if(V[X] == V[Y])
                     {
-                        pc += 2;
+                        PC += 2;
                     }
                     break;
 
@@ -300,16 +299,16 @@ namespace CHIP8.Emulator
 
                 case 0x9000: // 9NNN: Skip next instruction if register X and Y are not equal.
                     if(V[X] != V[Y]) {
-                        pc += 2;
+                        PC += 2;
                     }
                     break;
 
                 case 0xA000: // ANNN: Sets I to the address NNN
-                    I = (ushort)(Opcode & 0x0FFF);
+                    I = (ushort)(Instruction & 0x0FFF);
                     break;
 
                 case 0xB000:
-                    pc = (ushort)((Opcode & 0x0FFF) + V[0] - 2);
+                    PC = (ushort)((Instruction & 0x0FFF) + V[0] - 2);
                     break;
 
                 case 0xC000:
@@ -348,14 +347,14 @@ namespace CHIP8.Emulator
                     {
                         if(key[V[X]])
                         {
-                            pc += 2;
+                            PC += 2;
                         }
                     }
                     else
                     {
                         if(!key[V[X]])
                         {
-                            pc += 2;
+                            PC += 2;
                         }
                     }
 
@@ -375,7 +374,7 @@ namespace CHIP8.Emulator
                             }
                             else
                             {
-                                pc -= 2;
+                                PC -= 2;
                             }
 
                             break;
@@ -427,12 +426,12 @@ namespace CHIP8.Emulator
                     break;
 
                 default:
-                    Console.WriteLine("Unknown opcode: {0:X}", Opcode);
+                    Console.WriteLine("Unknown opcode: {0:X}", Instruction);
                     break;
             }
 
             IsInputExecuted = false;
-            pc += 2;
+            PC += 2;
 
             if (DelayTimer > 0)
             {

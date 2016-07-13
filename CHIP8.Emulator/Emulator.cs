@@ -17,10 +17,23 @@ namespace CHIP8.Emulator
         /// </summary>
         const String VERSION = "1.0.0";
 
+        /// <summary>
+        /// Whether the emulator runs in debug mode or not.
+        /// </summary>
         const bool DEBUG = true;
 
         /// <summary>
-        /// 
+        /// The screen width of the emulator.
+        /// </summary>
+        const int SCREEN_WIDTH = 640;
+
+        /// <summary>
+        /// The screen height of the emulator.
+        /// </summary>
+        const int SCREEN_HEIGHT = 320;
+
+        /// <summary>
+        /// This is the current keybinding
         /// </summary>
         public static Dictionary<Key, ushort> keyBindings = new Dictionary<Key, ushort>
                {
@@ -157,11 +170,14 @@ namespace CHIP8.Emulator
                     
                 };
 
-                gameWindow.Run(60);
+                gameWindow.Run(60.0, 60.0);
             }
         }
 
-        // Print out the help information
+        /// <summary>
+        /// Print out the help information.
+        /// </summary>
+        /// <param name="options">The command line options of the program.</param>
         static void showHelp(OptionSet options)
         {
             // show some app description message
