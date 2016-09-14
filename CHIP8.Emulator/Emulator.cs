@@ -6,7 +6,7 @@ using OpenTK.Input;
 using System.Drawing;
 using System.IO;
 using Mono.Options;
-using System.Collections.Generic;
+using System.Collections.Generic; 
 
 namespace CHIP8.Emulator
 {
